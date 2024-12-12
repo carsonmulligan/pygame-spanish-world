@@ -1,4 +1,4 @@
-# Language Border Crossing Game
+# Language Flying Game
 
 A Django-based educational game that teaches Spanish language skills through virtual travel across Mexico, Argentina, and Spain.
 
