@@ -37,7 +37,7 @@
                      style="top: {{ location.y_position }}%; left: {{ location.x_position }}%;"
                      data-location-id="{{ location.id }}">
                     <div class="location-icon" 
-                         style="background-image: url('{{ location.background_image.url }}')">
+                         style="background-image: url('{% if location.background_image %}{{ location.background_image.url }}{% else %}{% static 'game/images/default-location.png' %}{% endif %}')">
                     </div>
                     <div class="location-info">
                         <h3>{{ location.name }}</h3>
