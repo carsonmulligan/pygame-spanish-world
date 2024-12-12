@@ -1,0 +1,64 @@
+{% extends 'game/base.html' %}
+
+{% block title %}Welcome - Language Border Crossing{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2 text-center">
+        <h1 class="display-4 mb-4">Welcome to Language Border Crossing</h1>
+        <p class="lead mb-4">
+            Embark on a virtual journey across Spanish-speaking countries and improve your language skills through interactive conversations.
+        </p>
+        
+        {% if user.is_authenticated %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Your Progress</h5>
+                            <p class="card-text">Score: {{ player_progress.score }}</p>
+                            <p class="card-text">Current Location: {{ player_progress.current_location|default:"Not Started" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Available Locations</h5>
+                            <div class="row">
+                                {% for location in locations %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            {% if location.background_image %}
+                                                <img src="{{ location.background_image.url }}" class="card-img-top" alt="{{ location.name }}">
+                                            {% endif %}
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ location.name }}</h6>
+                                                <p class="card-text small">{{ location.description|truncatewords:20 }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p>No locations available yet.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Get Started</h5>
+                            <p class="card-text">Log in or create an account to start your language learning journey.</p>
+                            <a href="{% url 'admin:login' %}" class="btn btn-primary">Log In</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
