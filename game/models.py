@@ -5,6 +5,8 @@ class Location(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     background_image = models.ImageField(upload_to='locations/', null=True, blank=True)
+    x_position = models.IntegerField(default=50, help_text="X coordinate on the map (0-100)")
+    y_position = models.IntegerField(default=50, help_text="Y coordinate on the map (0-100)")
     
     def __str__(self):
         return self.name

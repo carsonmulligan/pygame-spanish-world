@@ -1,0 +1,204 @@
+.game-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+
+.game-map {
+    width: 100%;
+    height: 100%;
+    background: url('/static/game/images/map-background.jpg') no-repeat center center;
+    background-size: cover;
+    cursor: move;
+}
+
+.location-marker {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+
+.location-marker:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 15px rgba(255,215,0,0.6));
+}
+
+.location-icon {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    border: 2px solid gold;
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+
+.location-info {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 300px;
+    display: none;
+    border: 1px solid gold;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+.location-marker:hover .location-info {
+    display: block;
+}
+
+.game-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255,215,0,0.3);
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.score-display {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid gold;
+    color: gold;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.location-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+    border: 1px solid rgba(255,215,0,0.3);
+}
+
+.location-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.dialogue-container {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 25px;
+    border-radius: 15px 15px 0 0;
+    display: none;
+    border: 1px solid gold;
+    border-bottom: none;
+    box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
+}
+
+.dialogue-active {
+    display: block;
+}
+
+.game-button {
+    background: linear-gradient(145deg, #5a9fec, #4a90e2);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(74,144,226,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.game-button:hover {
+    background: linear-gradient(145deg, #4a90e2, #357abd);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74,144,226,0.4);
+}
+
+.game-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(74,144,226,0.2);
+}
+
+/* Additional Game Elements */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.location-display {
+    font-size: 1.1em;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.dialogue-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid gold;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    margin-top: 15px;
+}
+
+.dialogue-controls {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Map Navigation Controls */
+.map-controls {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.map-control-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid gold;
+    color: gold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.map-control-button:hover {
+    transform: scale(1.1);
+    background: rgba(0,0,0,0.9);
+} 

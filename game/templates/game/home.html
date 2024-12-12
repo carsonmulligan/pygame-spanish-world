@@ -1,64 +1,181 @@
 {% extends 'game/base.html' %}
+{% load static %}
 
-{% block title %}Welcome - Language Border Crossing{% endblock %}
+{% block title %}Language Flying Game{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'game/css/style.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2 text-center">
-        <h1 class="display-4 mb-4">Welcome to Language Border Crossing</h1>
-        <p class="lead mb-4">
-            Embark on a virtual journey across Spanish-speaking countries and improve your language skills through interactive conversations.
-        </p>
-        
-        {% if user.is_authenticated %}
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Your Progress</h5>
-                            <p class="card-text">Score: {{ player_progress.score }}</p>
-                            <p class="card-text">Current Location: {{ player_progress.current_location|default:"Not Started" }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Available Locations</h5>
-                            <div class="row">
-                                {% for location in locations %}
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card h-100">
-                                            {% if location.background_image %}
-                                                <img src="{{ location.background_image.url }}" class="card-img-top" alt="{{ location.name }}">
-                                            {% endif %}
-                                            <div class="card-body">
-                                                <h6 class="card-title">{{ location.name }}</h6>
-                                                <p class="card-text small">{{ location.description|truncatewords:20 }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% empty %}
-                                    <p>No locations available yet.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+{% if user.is_authenticated %}
+    <div class="game-container">
+        <header class="game-header">
+            <div class="player-info">
+                <span class="score-display">
+                    <i class="fas fa-star"></i> Score: {{ player_progress.score|default:"0" }}
+                </span>
+                <span class="location-display">
+                    <i class="fas fa-map-marker-alt"></i> 
+                    {{ player_progress.current_location|default:"Select a destination" }}
+                </span>
             </div>
-        {% else %}
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Get Started</h5>
-                            <p class="card-text">Log in or create an account to start your language learning journey.</p>
-                            <a href="{% url 'admin:login' %}" class="btn btn-primary">Log In</a>
-                        </div>
+            <div class="game-controls">
+                <a href="{% url 'admin:index' %}" class="game-button">
+                    <i class="fas fa-cog"></i> Admin
+                </a>
+                <a href="{% url 'api-root' %}" class="game-button">
+                    <i class="fas fa-code"></i> API
+                </a>
+            </div>
+        </header>
+
+        <div class="game-map" id="gameMap">
+            {% for location in locations %}
+                <div class="location-marker" 
+                     style="top: {{ location.y_position }}%; left: {{ location.x_position }}%;"
+                     data-location-id="{{ location.id }}">
+                    <div class="location-icon" 
+                         style="background-image: url('{{ location.background_image.url }}')">
+                    </div>
+                    <div class="location-info">
+                        <h3>{{ location.name }}</h3>
+                        <p>{{ location.description }}</p>
+                        <button class="game-button travel-button" data-location-id="{{ location.id }}">
+                            <i class="fas fa-plane"></i> Travel Here
+                        </button>
                     </div>
                 </div>
+            {% endfor %}
+        </div>
+
+        <div class="map-controls">
+            <button class="map-control-button" id="zoomIn">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="map-control-button" id="zoomOut">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="map-control-button" id="resetView">
+                <i class="fas fa-compress-arrows-alt"></i>
+            </button>
+        </div>
+
+        <div class="dialogue-container">
+            <div class="dialogue-content">
+                <!-- Dialogue content will be loaded dynamically -->
             </div>
-        {% endif %}
+            <div class="dialogue-controls">
+                <input type="text" class="dialogue-input" placeholder="Type your response...">
+                <button class="game-button submit-answer">
+                    <i class="fas fa-paper-plane"></i> Submit
+                </button>
+            </div>
+        </div>
     </div>
-</div>
+{% else %}
+    <div class="login-container">
+        <div class="login-card">
+            <h1>Welcome to Language Flying Game</h1>
+            <p>Embark on a virtual journey across Spanish-speaking countries and improve your language skills through interactive conversations.</p>
+            <a href="{% url 'admin:login' %}" class="game-button">
+                <i class="fas fa-sign-in-alt"></i> Start Your Journey
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Map zoom and pan functionality
+    const gameMap = document.getElementById('gameMap');
+    let scale = 1;
+    let panning = false;
+    let pointX = 0;
+    let pointY = 0;
+    let start = { x: 0, y: 0 };
+
+    function setTransform() {
+        gameMap.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+    }
+
+    // Zoom controls
+    document.getElementById('zoomIn').addEventListener('click', () => {
+        scale = Math.min(scale * 1.2, 4);
+        setTransform();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', () => {
+        scale = Math.max(scale / 1.2, 0.5);
+        setTransform();
+    });
+
+    document.getElementById('resetView').addEventListener('click', () => {
+        scale = 1;
+        pointX = 0;
+        pointY = 0;
+        setTransform();
+    });
+
+    // Map panning
+    gameMap.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        start = { x: e.clientX - pointX, y: e.clientY - pointY };
+        panning = true;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!panning) return;
+        pointX = (e.clientX - start.x);
+        pointY = (e.clientY - start.y);
+        setTransform();
+    });
+
+    document.addEventListener('mouseup', () => {
+        panning = false;
+    });
+
+    // Location markers interaction
+    const markers = document.querySelectorAll('.location-marker');
+    markers.forEach(marker => {
+        marker.addEventListener('click', async () => {
+            const locationId = marker.dataset.locationId;
+            try {
+                const response = await fetch('/api/progress/change_location/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ location_id: locationId })
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
 {% endblock %} 
