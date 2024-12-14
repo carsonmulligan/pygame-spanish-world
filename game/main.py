@@ -11,7 +11,7 @@ class Game:
     def __init__(self, width=1280, height=720):
         pygame.init()
         pygame.display.set_mode((width, height), DOUBLEBUF | OPENGL)
-        pygame.display.set_caption("3D World MVP")
+        pygame.display.set_caption("3D World MVP - Debug Mode")
         
         # Initialize OpenGL
         glEnable(GL_DEPTH_TEST)
@@ -22,17 +22,25 @@ class Game:
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         
         # Set up the perspective
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
         gluPerspective(45, (width/height), 0.1, 150.0)
+        glMatrixMode(GL_MODELVIEW)
+        
+        # Set clear color to dark blue for debugging
+        glClearColor(0.0, 0.0, 0.2, 1.0)
         
         # Initialize game objects
-        self.terrain = Terrain(size=100, scale=1)
-        self.avatar = Avatar(position=(0, 0, 0))
+        self.terrain = Terrain(size=50, scale=1)  # Reduced size for testing
+        self.avatar = Avatar(position=(0, 5, 0))  # Raised position for better view
         self.textures = self._load_textures()
         self.running = True
         
         # Lock mouse for camera control
         pygame.mouse.set_visible(False)
         pygame.event.set_grab(True)
+        
+        print("Game initialized successfully")
         
     def _load_textures(self):
         textures = {}
@@ -49,15 +57,14 @@ class Game:
                 
                 texid = glGenTextures(1)
                 glBindTexture(GL_TEXTURE_2D, texid)
-                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                 glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                 glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-                gluBuild2DMipmaps(GL_TEXTURE_2D, 3, ix, iy, GL_RGBA, GL_UNSIGNED_BYTE, image)
                 
                 textures[name] = texid
             except FileNotFoundError:
                 print(f"Warning: Texture file not found: {path}")
-                # Create a default checkerboard texture
+                # Create a simple checkerboard texture
                 textures[name] = self._create_default_texture()
                 
         return textures
@@ -112,10 +119,14 @@ class Game:
         
         # Set up lighting
         glLightfv(GL_LIGHT0, GL_POSITION, [1, 1, 1, 0])
-        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.2, 0.2, 0.2, 1])
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.8, 0.8, 0.8, 1])
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.3, 1])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 1.0, 1.0, 1])
         
-        # Draw terrain
+        # Draw debug grid
+        self._draw_debug_grid()
+        
+        # Draw terrain with enhanced visibility
+        glColor3f(0.5, 0.8, 0.5)  # Set color to light green
         self.terrain.draw(self.textures['grass'])
         
         # Draw avatar
@@ -123,12 +134,49 @@ class Game:
         
         pygame.display.flip()
         
+    def _draw_debug_grid(self):
+        glDisable(GL_LIGHTING)
+        glBegin(GL_LINES)
+        
+        # Draw grid lines
+        glColor3f(0.5, 0.5, 0.5)
+        for i in range(-10, 11):
+            glVertex3f(i, 0, -10)
+            glVertex3f(i, 0, 10)
+            glVertex3f(-10, 0, i)
+            glVertex3f(10, 0, i)
+            
+        # Draw coordinate axes
+        glColor3f(1, 0, 0)  # X axis (red)
+        glVertex3f(0, 0, 0)
+        glVertex3f(5, 0, 0)
+        
+        glColor3f(0, 1, 0)  # Y axis (green)
+        glVertex3f(0, 0, 0)
+        glVertex3f(0, 5, 0)
+        
+        glColor3f(0, 0, 1)  # Z axis (blue)
+        glVertex3f(0, 0, 0)
+        glVertex3f(0, 0, 5)
+        
+        glEnd()
+        glEnable(GL_LIGHTING)
+        
     def run(self):
+        print("Starting game loop")
         clock = pygame.time.Clock()
+        frame_count = 0
+        
         while self.running:
             self.handle_events()
             self.update()
             self.render()
+            
+            frame_count += 1
+            if frame_count % 60 == 0:  # Print debug info every 60 frames
+                print(f"FPS: {clock.get_fps():.1f}")
+                print(f"Avatar position: {self.avatar.position}")
+            
             clock.tick(60)
         
         pygame.quit()
