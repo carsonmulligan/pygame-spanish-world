@@ -8,9 +8,12 @@ from core.entities.avatar import Avatar
 from core.entities.beach_hut import BeachHut
 from core.entities.npc import NPC
 from PIL import Image
+import os
 
 class Game:
     def __init__(self, width=1280, height=720):
+        self.width = width
+        self.height = height
         pygame.init()
         pygame.display.set_mode((width, height), DOUBLEBUF | OPENGL)
         pygame.display.set_caption("Beach Scene - Barraca 87")
@@ -110,6 +113,31 @@ class Game:
         
         return texid
         
+    def take_screenshot(self):
+        """Capture the current frame and save it as a PNG file"""
+        # Get the window scale factor for Retina displays
+        display_info = pygame.display.Info()
+        scale = 2 if hasattr(display_info, 'current_w') and display_info.current_w > self.width else 1
+        
+        # Read the pixels from the frame buffer, accounting for Retina scaling
+        scaled_width = int(self.width * scale)
+        scaled_height = int(self.height * scale)
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        data = glReadPixels(0, 0, scaled_width, scaled_height, GL_RGB, GL_UNSIGNED_BYTE)
+        
+        # Convert to PIL Image and flip vertically (OpenGL's coordinate system is flipped)
+        image = Image.frombytes('RGB', (scaled_width, scaled_height), data)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        
+        # Create screenshots directory if it doesn't exist
+        if not os.path.exists('screenshots'):
+            os.makedirs('screenshots')
+        
+        # Save the image
+        screenshot_path = f'screenshots/beach_scene_{pygame.time.get_ticks()}.png'
+        image.save(screenshot_path)
+        print(f"Screenshot saved as {screenshot_path}")
+        
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -117,6 +145,15 @@ class Game:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                # Command+P for screenshot on Mac (K_p with KMOD_META)
+                elif event.key == pygame.K_p and (pygame.key.get_mods() & pygame.KMOD_META):
+                    # Temporarily release movement keys to prevent interference
+                    keys = pygame.key.get_pressed()
+                    if not any([keys[pygame.K_w], keys[pygame.K_s], keys[pygame.K_a], keys[pygame.K_d]]):
+                        self.take_screenshot()
+                        print("Screenshot taken! Check the screenshots folder.")
+                    else:
+                        print("Please release movement keys (WASD) before taking a screenshot")
             elif event.type == pygame.MOUSEMOTION:
                 self.avatar.rotate(event.rel[0] * 0.5)
                 
@@ -141,15 +178,15 @@ class Game:
         camera_pos, look_at = self.avatar.get_camera_position()
         gluLookAt(*camera_pos, *look_at, 0, 1, 0)
         
-        # Set up main sunlight
-        glLightfv(GL_LIGHT0, GL_POSITION, [1, 0.8, 0.6, 0])  # Angled sunlight
-        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.5, 0.5, 0.5, 1])  # Brighter ambient
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 0.95, 0.8, 1])  # Warm sunlight
+        # Set up main sunlight with increased intensity
+        glLightfv(GL_LIGHT0, GL_POSITION, [1, 0.8, 0.6, 0])
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.6, 0.6, 0.6, 1])   # Brighter ambient
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 1.0, 0.9, 1])   # Brighter sunlight
         
-        # Add fill light for shadows
-        glLightfv(GL_LIGHT1, GL_POSITION, [-0.5, 0.5, -0.2, 0])  # Fill light
-        glLightfv(GL_LIGHT1, GL_AMBIENT, [0.2, 0.2, 0.25, 1])  # Slight blue tint
-        glLightfv(GL_LIGHT1, GL_DIFFUSE, [0.3, 0.3, 0.35, 1])  # Soft fill
+        # Add fill light for shadows with increased intensity
+        glLightfv(GL_LIGHT1, GL_POSITION, [-0.5, 0.5, -0.2, 0])
+        glLightfv(GL_LIGHT1, GL_AMBIENT, [0.3, 0.3, 0.35, 1])  # Brighter ambient
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, [0.4, 0.4, 0.45, 1])  # Brighter fill
         
         # Draw terrain with beach texture
         self.terrain.draw(self.textures['beachscape'])
@@ -168,6 +205,7 @@ class Game:
         
     def run(self):
         print("Starting beach scene")
+        print("Press Command+P to take a screenshot (release movement keys first)")
         clock = pygame.time.Clock()
         frame_count = 0
         
