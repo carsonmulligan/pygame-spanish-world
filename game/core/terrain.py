@@ -13,30 +13,34 @@ class Terrain:
         self.vertices = []
         self.normals = []
         self.texcoords = []
+        self.water_level = -0.2  # Water level for ocean
+        self.beach_start = 0.0   # Where beach starts
         self.generate_terrain()
-        print(f"Terrain generated with size {size}x{size}")
+        print(f"Beach terrain generated with size {size}x{size}")
         
     def generate_terrain(self):
         # Generate height map using Perlin noise
         self.height_map = np.zeros((self.size, self.size))
-        scale = 25.0  # Increased scale for more visible variations
-        octaves = 4   # Reduced octaves for simpler terrain
+        scale = 25.0
+        octaves = 4
         persistence = 0.5
         lacunarity = 2.0
         
-        print("Generating height map...")
+        print("Generating beach height map...")
         for i in range(self.size):
             for j in range(self.size):
                 x = i/scale
                 y = j/scale
-                elevation = snoise2(x, y, octaves, persistence, lacunarity)
-                self.height_map[i][j] = elevation
+                # Create gradual slope for beach
+                beach_gradient = (j / self.size) * 0.5
+                elevation = snoise2(x, y, octaves, persistence, lacunarity) * 0.3
+                self.height_map[i][j] = elevation - beach_gradient
         
         # Normalize height map
         self.height_map = (self.height_map - self.height_map.min()) / (self.height_map.max() - self.height_map.min())
-        self.height_map *= 2.0  # Reduced maximum height for testing
+        self.height_map *= 1.0  # Reduced maximum height for flatter beach
         
-        print("Generating vertices and normals...")
+        print("Generating beach vertices and normals...")
         # Generate vertices, normals, and texture coordinates
         for z in range(self.size - 1):
             for x in range(self.size - 1):
@@ -54,10 +58,10 @@ class Terrain:
                 
                 # Texture coordinates
                 self.texcoords.extend([
-                    (x/5, z/5),          # Increased tiling for better visibility
-                    ((x+1)/5, z/5),
-                    ((x+1)/5, (z+1)/5),
-                    (x/5, (z+1)/5)
+                    (x/3, z/3),          # Increased tiling for better visibility
+                    ((x+1)/3, z/3),
+                    ((x+1)/3, (z+1)/3),
+                    (x/3, (z+1)/3)
                 ])
         
         print(f"Generated {len(self.vertices)} vertices")
@@ -70,47 +74,62 @@ class Terrain:
         )
     
     def _calculate_normal(self, v1, v2, v3):
-        # Calculate surface normal for lighting
         u = np.subtract(v2, v1)
         v = np.subtract(v3, v1)
         normal = np.cross(u, v)
         length = np.linalg.norm(normal)
         if length == 0:
-            return (0, 1, 0)  # Default normal if calculation fails
+            return (0, 1, 0)
         return normal / length
     
     def draw(self, grass_texture):
+        # Draw terrain
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, grass_texture)
         
         glBegin(GL_QUADS)
         for i in range(0, len(self.vertices), 4):
             for j in range(4):
+                vertex = self.vertices[i + j]
+                # Color based on height (water, sand, vegetation)
+                if vertex[1] < self.water_level:
+                    glColor3f(0.0, 0.4, 0.8)  # Blue for water
+                elif vertex[1] < self.beach_start:
+                    glColor3f(0.9, 0.8, 0.6)  # Light yellow for sand
+                else:
+                    glColor3f(0.3, 0.6, 0.3)  # Green for vegetation
+                    
                 glNormal3fv(self.normals[i + j])
                 glTexCoord2fv(self.texcoords[i + j])
-                glVertex3fv(self.vertices[i + j])
+                glVertex3fv(vertex)
         glEnd()
         
-        # Draw wireframe overlay for debugging
+        # Draw water surface
+        self._draw_water()
+        
+    def _draw_water(self):
         glDisable(GL_TEXTURE_2D)
-        glDisable(GL_LIGHTING)
-        glColor3f(1, 1, 1)  # White wireframe
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
+        glColor4f(0.0, 0.4, 0.8, 0.5)  # Semi-transparent blue
         
         glBegin(GL_QUADS)
-        for i in range(0, len(self.vertices), 4):
-            for j in range(4):
-                glVertex3fv(self.vertices[i + j])
+        # Draw water surface as a large quad
+        size = self.size * self.scale
+        glVertex3f(-size/2, self.water_level, -size/2)
+        glVertex3f(size/2, self.water_level, -size/2)
+        glVertex3f(size/2, self.water_level, size/2)
+        glVertex3f(-size/2, self.water_level, size/2)
         glEnd()
         
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glEnable(GL_LIGHTING)
+        glDisable(GL_BLEND)
+        glEnable(GL_TEXTURE_2D)
         
     def get_height(self, x, z):
-        # Get interpolated height at any point
         terrain_x = int((x + self.size/2) / self.scale)
         terrain_z = int((z + self.size/2) / self.scale)
         
         if 0 <= terrain_x < self.size-1 and 0 <= terrain_z < self.size-1:
-            return self.height_map[terrain_x][terrain_z]
-        return 0
+            return max(self.height_map[terrain_x][terrain_z], self.water_level)
+        return self.water_level
