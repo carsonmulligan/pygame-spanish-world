@@ -3,4 +3,8 @@ djangorestframework==3.14.0
 pygame==2.5.2
 Pillow==10.1.0
 python-dotenv==1.0.0
-django-cors-headers==4.3.1 
+django-cors-headers==4.3.1
+PyOpenGL==3.1.7
+PyOpenGL-accelerate==3.1.7
+numpy==1.26.2
+noise==1.2.2 
